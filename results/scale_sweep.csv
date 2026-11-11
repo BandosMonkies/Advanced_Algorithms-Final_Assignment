@@ -1,0 +1,5 @@
+scale_bits,max_dist_to_int,match_with_convolution
+8,0.00027300703459332,True
+16,1.1110860214103013e-06,True
+24,4.5065462472848594e-09,True
+32,1.659827830735594e-11,True
