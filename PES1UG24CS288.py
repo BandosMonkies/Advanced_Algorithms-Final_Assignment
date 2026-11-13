@@ -135,7 +135,7 @@ def main() -> None:
     results = []
 
     for n in SIZES:
-        print(f"\n=== n={n} ===")
+        print(f"\n\n======================= n={n} ===========================")
         a, b = polynomials[n]
         a_padded = np.pad(a, (0, n))
         b_padded = np.pad(b, (0, n))
@@ -149,14 +149,26 @@ def main() -> None:
         a_fft = fft(a_padded)
         b_fft = fft(b_padded)
         fft_time = time.perf_counter() - start
+
+        if n == 16:
+            print(a_dft)
+            print(b_dft)
+            
         print(f"DFT time: {dft_time:.8f} seconds")
         print(f"FFT time: {fft_time:.8f} seconds")
+
         max_difference = max(
             np.max(np.abs(a_dft - a_fft)), np.max(np.abs(b_dft - b_fft))
         )
         print(f"Max diff DFT vs FFT: {max_difference:.3e}")
 
         product = a_fft * b_fft
+
+
+        if n==16:
+            print("Product = ", product)
+
+
         # The assignment's default offset is 10**6.  This dataset's largest
         # frequency product needs a larger offset after scale=1000.
         safe_offset = int(np.ceil(np.max(np.abs(product)) * 1000)) + 1

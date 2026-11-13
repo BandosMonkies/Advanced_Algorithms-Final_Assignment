@@ -5,6 +5,36 @@ import secrets
 from functools import lru_cache
 
 
+def modular_exponentiation(a: int, b: int, n: int) -> int:
+    """Calculate ``(a ** b) % n`` with left-to-right binary exponentiation."""
+    if b < 0:
+        raise ValueError("The exponent must be non-negative.")
+    if n <= 0:
+        raise ValueError("The modulus must be positive.")
+    if b == 0:
+        return 1 % n
+
+    result = 1
+    for bit in bin(b)[2:]:
+        result = (result * result) % n
+        if bit == "1":
+            result = (result * (a % n)) % n
+    return result
+
+
+def _modular_inverse(a: int, n: int) -> int:
+    """Return the modular inverse of ``a`` modulo ``n``."""
+    old_r, r = a, n
+    old_s, s = 1, 0
+    while r != 0:
+        quotient = old_r // r
+        old_r, r = r, old_r - quotient * r
+        old_s, s = s, old_s - quotient * s
+    if old_r != 1:
+        raise ValueError(f"{a} has no modular inverse modulo {n}.")
+    return old_s % n
+
+
 def is_probable_prime(n: int, rounds: int = 20) -> bool:
     """Test probable primality with Miller-Rabin in O(rounds * log(n)^3) time."""
     if n < 2:
@@ -23,11 +53,11 @@ def is_probable_prime(n: int, rounds: int = 20) -> bool:
 
     for _ in range(rounds):
         base = secrets.randbelow(n - 3) + 2
-        value = pow(base, d, n)
+        value = modular_exponentiation(base, d, n)
         if value in (1, n - 1):
             continue
         for _ in range(s - 1):
-            value = pow(value, 2, n)
+            value = modular_exponentiation(value, 2, n)
             if value == n - 1:
                 break
         else:
@@ -59,7 +89,7 @@ def generate_keypair(bits: int) -> tuple[tuple[int, int], tuple[int, int]]:
         phi = (p - 1) * (q - 1)
         for exponent in (65537, 3, 5, 17, 257):
             if math.gcd(exponent, phi) == 1:
-                private_exponent = pow(exponent, -1, phi)
+                private_exponent = _modular_inverse(exponent, phi)
                 return ((modulus, exponent), (modulus, private_exponent))
 
 
@@ -68,7 +98,7 @@ def rsa_encrypt(m: int, public_key: tuple[int, int]) -> int:
     modulus, exponent = public_key
     if not isinstance(m, int) or not 0 <= m < modulus:
         raise ValueError("RSA plaintext must be an integer in the range [0, modulus).")
-    return pow(m, exponent, modulus)
+    return modular_exponentiation(m, exponent, modulus)
 
 
 def rsa_decrypt(c: int, private_key: tuple[int, int]) -> int:
@@ -76,7 +106,7 @@ def rsa_decrypt(c: int, private_key: tuple[int, int]) -> int:
     modulus, exponent = private_key
     if not isinstance(c, int) or not 0 <= c < modulus:
         raise ValueError("RSA ciphertext must be an integer in the range [0, modulus).")
-    return pow(c, exponent, modulus)
+    return modular_exponentiation(c, exponent, modulus)
 
 
 def encode_component(x: float, scale: int = 1000, offset: int = 10**6) -> int:
